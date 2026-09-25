@@ -34,6 +34,51 @@ The label is treated as statistics, the reason as language — split apart:
 Reasons are templates citing printed evidence numbers (never scored, no
 generator call).
 
+## Synthetic training data
+
+Thirty hand-labeled days cannot fit 26 features — model selection on 30
+rows is noise. Since human labels are capped at 60, volume comes from weak
+(rule-generated) labels instead.
+
+**Generator (`generate_synth_meters.py`, stdlib + numpy, pinned seeds).**
+Mimics the meter CSV shape only: 15-minute `timestamp,value_kwh` rows
+grouped into meter-days. No real consumption data is reused — every level
+is drawn from fixed synthetic ranges, so reruns are byte-identical
+(sha-verified against the shipped files). Scale: 12 meters × 90 days × 96
+intervals = **103,632 interval rows** with **1,080 day labels**. The meter
+mix is weighted toward standby/off (5 night-standby, 3 mostly-off, 2
+weekend-line, 2 mixed) so the label mix stays trainable; the spring-forward
+short day (2026-03-29, 92 intervals) is covered.
+
+**Weak labels.** Each synthetic day is labeled by the amended
+weak-label rule (unit fix, ≥30% running share → active, borderline floor
+→ unsure). Weak labels agree with the deterministic rules floor on 97.5%
+of the 1,080 days — stated plainly, training here is **rule distillation**:
+the classifier approaches but cannot discover beyond the floor. Its value
+is a portable sub-millisecond model plus a tunable abstention curve, not
+new judgment. The sealed human eval is the only judge that matters.
+
+**How the data is used (three roles, never mixed).**
+
+| Role | Data | Used for |
+|---|---|---|
+| FIT | synth 1,080 weak days | 5-fold CV, winner pick, refit |
+| CALIBRATE | human train 30 (private) | unsure-threshold operating point |
+| SEALED | human eval 30 (private) | one eval run per model, nothing else |
+
+Decontamination is enforced by construction (synthetic IDs live in their
+own `s38_*` namespace) and asserted whenever the private labels are
+present: synth-vs-human day-ID overlap is 0. Without the labels the check
+is skipped with a warning.
+
+Regenerate the full set (byte-identical) or a smoke-size one:
+
+```bash
+python3 generate_synth_meters.py --root synth
+python3 generate_synth_meters.py --root /tmp/smoke --meters 2 --days 5
+python3 generate_synth_meters.py --root synth --calibrate --data-root .  # needs private labels
+```
+
 ## Results (frozen human-eval-30)
 
 | System | Accuracy | Macro-F1 | Decline rate | Decline precision |
