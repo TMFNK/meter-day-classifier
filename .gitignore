@@ -1,0 +1,34 @@
+# env / caches (re-creatable)
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# secrets — NEVER commit
+.env
+.env.*
+
+# model weights in any format (never commit retrains by accident)
+*.gguf
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.onnx
+*.ckpt
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Private human data (see data/README.md) — never commit.
+/data/labels_v1.json
+/data/raw/
+outputs/label_pack/selection.json
+
+# NOTE: synth/ (generated training data + frozen artifacts) and outputs/
+# (scoreboard + per-day predictions) ARE committed on purpose. They are the
+# worked example: regenerate with generate_synth_meters.py to verify
+# byte-identical output (see README).

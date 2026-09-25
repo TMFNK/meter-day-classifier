@@ -1,0 +1,249 @@
+{
+  "cv_tables": {
+    "human30_logreg": [
+      {
+        "acc_mean": 0.9667,
+        "clf__C": 0.05,
+        "macro_f1_mean": 0.9556,
+        "macro_f1_std": 0.0629,
+        "model": "logreg"
+      },
+      {
+        "acc_mean": 0.9667,
+        "clf__C": 0.1,
+        "macro_f1_mean": 0.9556,
+        "macro_f1_std": 0.0629,
+        "model": "logreg"
+      },
+      {
+        "acc_mean": 0.9333,
+        "clf__C": 0.5,
+        "macro_f1_mean": 0.8907,
+        "macro_f1_std": 0.1545,
+        "model": "logreg"
+      },
+      {
+        "acc_mean": 0.9333,
+        "clf__C": 1.0,
+        "macro_f1_mean": 0.8907,
+        "macro_f1_std": 0.1545,
+        "model": "logreg"
+      },
+      {
+        "acc_mean": 0.9333,
+        "clf__C": 5.0,
+        "macro_f1_mean": 0.8907,
+        "macro_f1_std": 0.1545,
+        "model": "logreg"
+      }
+    ],
+    "human30_rf": [
+      {
+        "acc_mean": 0.8667,
+        "clf__max_depth": 2,
+        "clf__min_samples_leaf": 5,
+        "macro_f1_mean": 0.8717,
+        "macro_f1_std": 0.1124,
+        "model": "rf"
+      },
+      {
+        "acc_mean": 0.8667,
+        "clf__max_depth": 3,
+        "clf__min_samples_leaf": 5,
+        "macro_f1_mean": 0.8717,
+        "macro_f1_std": 0.1124,
+        "model": "rf"
+      },
+      {
+        "acc_mean": 0.8667,
+        "clf__max_depth": 4,
+        "clf__min_samples_leaf": 5,
+        "macro_f1_mean": 0.8717,
+        "macro_f1_std": 0.1124,
+        "model": "rf"
+      },
+      {
+        "acc_mean": 0.4333,
+        "clf__max_depth": 2,
+        "clf__min_samples_leaf": 10,
+        "macro_f1_mean": 0.1508,
+        "macro_f1_std": 0.0112,
+        "model": "rf"
+      },
+      {
+        "acc_mean": 0.4333,
+        "clf__max_depth": 3,
+        "clf__min_samples_leaf": 10,
+        "macro_f1_mean": 0.1508,
+        "macro_f1_std": 0.0112,
+        "model": "rf"
+      },
+      {
+        "acc_mean": 0.4333,
+        "clf__max_depth": 4,
+        "clf__min_samples_leaf": 10,
+        "macro_f1_mean": 0.1508,
+        "macro_f1_std": 0.0112,
+        "model": "rf"
+      }
+    ],
+    "synth_logreg": [
+      {
+        "acc_mean": 0.9926,
+        "clf__C": 1.0,
+        "macro_f1_mean": 0.9919,
+        "macro_f1_std": 0.0065,
+        "model": "logreg"
+      },
+      {
+        "acc_mean": 0.9926,
+        "clf__C": 5.0,
+        "macro_f1_mean": 0.9919,
+        "macro_f1_std": 0.0051,
+        "model": "logreg"
+      },
+      {
+        "acc_mean": 0.9917,
+        "clf__C": 0.5,
+        "macro_f1_mean": 0.991,
+        "macro_f1_std": 0.0063,
+        "model": "logreg"
+      },
+      {
+        "acc_mean": 0.987,
+        "clf__C": 0.1,
+        "macro_f1_mean": 0.9865,
+        "macro_f1_std": 0.0075,
+        "model": "logreg"
+      },
+      {
+        "acc_mean": 0.9843,
+        "clf__C": 0.05,
+        "macro_f1_mean": 0.9833,
+        "macro_f1_std": 0.0089,
+        "model": "logreg"
+      }
+    ],
+    "synth_rf": [
+      {
+        "acc_mean": 0.9926,
+        "clf__max_depth": 3,
+        "clf__min_samples_leaf": 5,
+        "macro_f1_mean": 0.9918,
+        "macro_f1_std": 0.006,
+        "model": "rf"
+      },
+      {
+        "acc_mean": 0.9926,
+        "clf__max_depth": 3,
+        "clf__min_samples_leaf": 10,
+        "macro_f1_mean": 0.9918,
+        "macro_f1_std": 0.006,
+        "model": "rf"
+      },
+      {
+        "acc_mean": 0.9926,
+        "clf__max_depth": 4,
+        "clf__min_samples_leaf": 5,
+        "macro_f1_mean": 0.9918,
+        "macro_f1_std": 0.006,
+        "model": "rf"
+      },
+      {
+        "acc_mean": 0.9926,
+        "clf__max_depth": 4,
+        "clf__min_samples_leaf": 10,
+        "macro_f1_mean": 0.9918,
+        "macro_f1_std": 0.006,
+        "model": "rf"
+      },
+      {
+        "acc_mean": 0.987,
+        "clf__max_depth": 2,
+        "clf__min_samples_leaf": 5,
+        "macro_f1_mean": 0.9864,
+        "macro_f1_std": 0.0056,
+        "model": "rf"
+      },
+      {
+        "acc_mean": 0.987,
+        "clf__max_depth": 2,
+        "clf__min_samples_leaf": 10,
+        "macro_f1_mean": 0.9864,
+        "macro_f1_std": 0.0056,
+        "model": "rf"
+      }
+    ]
+  },
+  "features": [
+    "missing_pct",
+    "n_missing",
+    "n_valid",
+    "zero_pct_valid",
+    "zero_count",
+    "max_zero_run",
+    "trailing_zero_run",
+    "positive_p10_kwh",
+    "positive_median_kwh",
+    "positive_p95_kwh",
+    "positive_max_kwh",
+    "positive_min_kwh",
+    "flatness_ratio",
+    "floor_to_ref_ratio",
+    "low_positive_share_valid",
+    "low_weekday_night_share_d",
+    "low_weekday_day_share_d",
+    "low_weekend_share_d",
+    "weekday_night_median_kwh",
+    "weekday_day_median_kwh",
+    "weekend_median_kwh",
+    "night_to_day_ratio",
+    "meter_reference_kwh",
+    "low_threshold_kwh",
+    "is_borderline_floor",
+    "is_weekend"
+  ],
+  "imputer_medians": [
+    4.166666666666667,
+    4.0,
+    92.0,
+    3.2967032967032965,
+    3.0,
+    1.0,
+    0.0,
+    2.0346636,
+    2.5305334999999998,
+    8.92521495,
+    14.542972,
+    1.3575084999999998,
+    0.5879987747037392,
+    0.050949999999999995,
+    0.31698564593301437,
+    0.10869565217391304,
+    0.10416666666666667,
+    0.502808988764045,
+    0.20034425,
+    2.7855540000000003,
+    0.06979450000000001,
+    0.28365,
+    14.01770425,
+    4.9061964875,
+    0.0,
+    0.0
+  ],
+  "label_order": [
+    "active",
+    "standby",
+    "off",
+    "unsure"
+  ],
+  "threshold": 0.0,
+  "threshold_rule": "max decline-F1 on human-train-30, ties to smaller t",
+  "winner": {
+    "acc_mean": 0.9926,
+    "clf__C": 1.0,
+    "macro_f1_mean": 0.9919,
+    "macro_f1_std": 0.0065,
+    "model": "logreg"
+  }
+}
