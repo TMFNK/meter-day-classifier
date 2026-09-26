@@ -1,4 +1,4 @@
-# Vendored from Project 37 (gepa-meter-sorter/baselines/rules_floor.py) on 2026-09-25.
+# Vendored from MbitAI's shared meter-day harness on 2026-09-25.
 # Logic is unchanged from the frozen original; only this header is new.
 # Ships as the reference floor for generate_synth_meters.py --calibrate
 # (no predictor in this repo uses it since the hybrid was removed).

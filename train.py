@@ -33,7 +33,7 @@ from sklearn.preprocessing import StandardScaler
 from features import FEATURES, build_matrix, load_synth_records
 
 HERE = Path(__file__).resolve().parent
-ARTIFACTS = HERE / "synth" / "artifacts"
+ARTIFACTS = HERE / "artifacts"
 RANDOM_STATE = 38
 
 

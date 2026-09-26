@@ -1,4 +1,4 @@
-# Vendored from Project 37 (gepa-meter-sorter/data_io.py) on 2026-09-25.
+# Vendored from MbitAI's shared meter-day harness on 2026-09-25.
 # Logic is unchanged from the frozen original; only this header is new.
 # Here ROOT resolves to meter-day-classifier, which mirrors the same
 # data/ + outputs/label_pack/ layout (human labels are private, not shipped).

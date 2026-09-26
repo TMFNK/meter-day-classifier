@@ -1,10 +1,10 @@
 # meter-day-classifier
 
 Classical-ML meter-day classifier: one label per meter-day (`active` /
-`standby` / `off` / `unsure`) from 15-minute kWh intervals. It does the
-same frozen task as GEPA prompt optimization, but with no LLM calls and
-no prompt search. Result: **90.0% eval accuracy vs an 86.7%
-deterministic rules floor**, at 0.77 ms/day and zero inference cost.
+`standby` / `off` / `unsure`) from 15-minute kWh intervals. It solves the
+task with no LLM calls and no prompt search. Result: **90.0% eval accuracy
+vs an 86.7% deterministic rules floor**, at 0.77 ms/day and zero inference
+cost.
 
 Self-contained: evidence contract, loader, scorer, and the synthetic-data
 generator all live in this repo. The only thing not shipped is the 60
@@ -12,6 +12,61 @@ hand-labeled days (private; see `data/README.md`).
 
 Keywords: energy analytics, meter data, classification, offline,
 reproducibility, scikit-learn.
+
+## Repo map
+
+```text
+meter-day-classifier/
+├── synth/                  generated training data  (committed, regenerable)
+│   ├── data/raw/s38_m*.csv   12 meter CSVs, 15-min intervals
+│   ├── labels_synth38_v1.json  1,080 weak day labels
+│   ├── generator_stats.csv   per-meter summary
+│   └── README.md
+├── artifacts/              the frozen trained model  (committed)
+│   ├── model.joblib          logistic regression
+│   └── operating_point.json  threshold + feature medians
+├── outputs/                the measured results  (committed)
+│   ├── results.csv           scoreboard, one row per system per split
+│   └── predictions/          per-day labels + reasons (.jsonl)
+├── data/                   private gold labels  (NOT committed)
+│   └── README.md             what to place here
+├── docs/
+│   └── SOLUTION.md         business framing: buyers, ROI, engagement
+├── <pipeline>.py           see "File reference" below
+├── reproduce.sh            one-command public run
+├── requirements.txt        numpy, scikit-learn==1.4.0
+└── LICENSE / NOTICE        Apache-2.0 + attribution
+```
+
+Four folders, four jobs. Every folder name says which one:
+
+| Folder       | Committed?                          | Contains                                                                  | Regenerate with                                 |
+| ------------ | ----------------------------------- | ------------------------------------------------------------------------- | ----------------------------------------------- |
+| `synth/`     | yes (generated, ~3.4 MB)            | Synthetic training data: 12 meter CSVs, weak labels, generator stats      | `python3 generate_synth_meters.py --root synth` |
+| `artifacts/` | yes (frozen model, ~10 KB)          | The trained model and its operating point                                 | `python3 train.py --variant synth` (needs private labels) |
+| `data/`      | **no** — `README.md` placeholder only | The private 60 hand-labeled gold days                                   | you place them; see `data/README.md`            |
+| `outputs/`   | yes (the frozen numbers)            | Scoreboard `results.csv` + per-day predictions `.jsonl`                   | `python3 run_eval.py` (needs private labels)    |
+| `docs/`      | yes                                 | Business framing only (`SOLUTION.md`)                                     | n/a                                             |
+
+**Why data and model live in separate folders.** They have different
+lifetimes and different permissions: `synth/` is *input* (regenerable any
+time, byte-identical), `artifacts/` is a *frozen output* of training that
+must not be overwritten by accident, and `data/` is *private* (never
+committed). Keeping the model out of `synth/` means "delete and regenerate
+the data" can never silently delete the shipped model.
+
+**Pipeline at a glance.** Data flows left to right; each arrow is one command:
+
+```text
+generate_synth_meters.py → synth/            weak-labeled meter-days
+        features.py      → 1080 × 26 matrix  features only, no model
+        train.py         → artifacts/        CV winner, then refit
+        predict.py       ← artifacts/        loads frozen model, read-only
+        run_eval.py      → outputs/          frozen scorer, sealed split
+```
+
+`rules_floor.py` sits beside this as the deterministic reference the model
+is measured against; `scorer.py` holds the metrics both use.
 
 ## The business problem
 
@@ -23,8 +78,7 @@ nobody can compare or audit. The waste is concrete: a compressor humming
 through the night, a production line left in standby over the weekend,
 an idle load nobody noticed because the daily total looked normal.
 
-This is the problem behind the ecoplanet standby-detection case study:
-standby consumption is a recurring, hidden source of energy waste, and
+Standby consumption is a recurring, hidden source of energy waste, and
 detecting it reliably is harder than it looks. Real meter data is messy
 (missing readings, oddities, machines that don't behave as expected), and
 "no reliable estimate for this meter, and here's why" has to be a
@@ -101,9 +155,9 @@ whole set regenerates byte-identically):
    multiplier, 1–2 intervals) and missing data: about 30% of missing
    readings placed in contiguous outage blocks of 4–25 intervals, the
    rest scattered, with a per-meter missing rate drawn from 0–15%.
-5. **Weak label.** Each day is labeled by the amended weak-label rule
-   (byte-identical to the parent benchmark's): heavy missing (>25% of
-   intervals) → `unsure`; zeros ≥60% of valid intervals → `off`; one flat
+5. **Weak label.** Each day is labeled by the frozen weak-label rule:
+   heavy missing (>25% of intervals) → `unsure`; zeros ≥60% of valid
+   intervals → `off`; one flat
    band near the meter's running level → `unsure` (flat, no distinction);
    floor within a third of the running level → `unsure` (borderline
    floor); p95 ≤ 35% of running level → `standby`; running share ≥30% →
@@ -165,11 +219,19 @@ design.
 
 **Results (frozen human-eval-30).**
 
-| System                                 | Accuracy  | Macro-F1  | Decline rate | Decline precision |
-| -------------------------------------- | --------- | --------- | ------------ | ----------------- |
-| `rules_floor_v1` (deterministic floor) | 86.7%     | 0.881     | 40.0%        | 0.667             |
-| `zero_shot_v1` (local 2B LLM)          | 43.8%     | 0.279     | 50.0%        | 0.375             |
-| `classical_logreg_v1` (this repo)      | **90.0%** | **0.910** | 36.7%        | **0.727**         |
+| System                                     | Accuracy  | Macro-F1  | Decline rate | Decline precision |
+| ------------------------------------------ | --------- | --------- | ------------ | ----------------- |
+| `rules_floor_v1` (deterministic floor)     | 86.7%     | 0.881     | 40.0%        | 0.667             |
+| `llm_zero_shot_v1` (local 2B LLM)          | 43.8%     | 0.279     | 50.0%        | 0.375             |
+| `llm_prompt_opt_v1` (same LLM, tuned prompt)| 43.8%    | 0.279     | 50.0%        | 0.375             |
+| `classical_logreg_v1` (this repo)          | **90.0%** | **0.910** | 36.7%        | **0.727**         |
+
+The two `llm_*` rows are reference baselines kept for context: an
+off-the-shelf local LLM asked the same four-label question, once
+zero-shot and once with a tuned prompt. They score **identically on every
+quality metric** — the tuned prompt bought no accuracy, only extra latency
+(11.7 s vs 30.5 s per day). They are not this repo's method; this repo's
+row is `classical_logreg_v1`.
 
 _Why the floor row says 86.7% here but the committed `results.csv` floor
 row reads 93.3%:_ 86.7% is the pre-registered floor from the original
@@ -180,9 +242,6 @@ agree with the human eval labels on all 30 days. The headline comparison
 stays the pre-registered 86.7%: it is what the classifier was measured
 against at eval time, and quoting the amended-rule floor would credit the
 classifier with beating a baseline rebuilt from its own training rule.
-The `zero_shot_v1` / `gepa_opt_v1` rows in `results.csv` are legacy
-comparison rows carried over from the parent benchmark; this repo's own
-row is `classical_logreg_v1`.
 
 `classical_logreg_v1`: validity 1.0, consistency 1.0 (deterministic),
 per-class 7/9 active, 6/7 standby, 6/6 off, 8/8 unsure. All 3 errors are
@@ -198,29 +257,37 @@ are weak (rule-generated) and the 60 gold days are a small, private set
 from one synthetic benchmark. The eval is a controlled comparison, not a
 savings claim.
 
-## Layout
+## File reference
 
-| Path                       | Role                                                                                                                  |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **Model pipeline**         |                                                                                                                       |
-| `evidence.py`              | Vendored evidence contract (`DayEvidence`, grouping, p95); logic unchanged, see header                                |
-| `data_io.py`               | Vendored loader (`DayRecord`, label/split loading); logic unchanged                                                   |
-| `features.py`              | Closed 26-feature contract from `DayEvidence` only; `--check-splits`, `--build-synth`                                 |
-| `train.py`                 | Weak-label CV + human-train calibration; has no eval-loading path by design                                           |
-| `predict.py`               | Frozen-model predictor + template reason                                                                              |
-| **Evaluation**             |                                                                                                                       |
-| `scorer.py`                | Vendored metrics + run harness; logic unchanged                                                                       |
-| `rules_floor.py`           | Vendored deterministic floor, reference for `--calibrate` only                                                        |
-| `run_eval.py`              | Eval-once via the scorer; writes to `outputs/` only                                                                   |
-| **Data**                   |                                                                                                                       |
-| `generate_synth_meters.py` | Pinned-seed synthetic meter generator (stdlib + numpy)                                                                |
-| `synth/`                   | Generated training data (12 meters × 90 days), weak labels, frozen artifacts (`model.joblib`, `operating_point.json`) |
-| `data/`                    | Placeholder only; private human labels live here locally, never in git                                                |
-| `outputs/`                 | Scoreboard (`results.csv`) + per-day predictions (`.jsonl`)                                                           |
-| **Docs / run**             |                                                                                                                       |
-| `docs/SOLUTION.md`         | Business framing: buyers, ROI, engagement shapes                                                                      |
-| `reproduce.sh`             | One-command public run (no private data needed)                                                                       |
-| `requirements.txt`         | `numpy`, `scikit-learn==1.4.0`                                                                                        |
+The **Repo map** at the top shows the folders. This is the file-by-file
+detail, in the order data flows through the pipeline:
+
+| Path                       | Role                                                                                                     |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **1. Generate data**       |                                                                                                          |
+| `generate_synth_meters.py` | Pinned-seed synthetic meter generator (stdlib + numpy); writes `synth/`                                   |
+| **2. Build features**      |                                                                                                          |
+| `evidence.py`              | Day-evidence contract (`DayEvidence`, day grouping, p95 reference)                                        |
+| `data_io.py`               | Loader (`DayRecord`, label/split loading)                                                                 |
+| `features.py`              | Closed 26-feature contract from `DayEvidence` only; `--check-splits`, `--build-synth`                     |
+| **3. Train**               |                                                                                                          |
+| `train.py`                 | Weak-label CV + human-train calibration; writes `artifacts/`; has no eval-loading path by design           |
+| `artifacts/`               | Frozen model (`model.joblib`) + operating point (`operating_point.json`)                                  |
+| **4. Predict**             |                                                                                                          |
+| `predict.py`               | Frozen-model predictor + template reason; reads `artifacts/` read-only                                     |
+| **5. Evaluate**            |                                                                                                          |
+| `rules_floor.py`           | Deterministic floor; the reference the model is measured against                                          |
+| `scorer.py`                | Metrics + run harness used by both                                                                        |
+| `run_eval.py`              | Eval-once via the scorer; writes to `outputs/` only                                                       |
+| **Data folders**           |                                                                                                          |
+| `synth/`                   | Generated training data + weak labels (regenerable)                                                       |
+| `data/`                    | Placeholder; private human labels live here locally, never in git                                         |
+| `outputs/`                 | Scoreboard (`results.csv`) + per-day predictions (`.jsonl`)                                               |
+| **Docs / run / license**   |                                                                                                          |
+| `docs/SOLUTION.md`         | Business framing: buyers, ROI, engagement shapes                                                          |
+| `reproduce.sh`             | One-command public run (no private data needed)                                                            |
+| `requirements.txt`         | `numpy`, `scikit-learn==1.4.0`                                                                            |
+| `LICENSE` / `NOTICE`       | Apache-2.0 + attribution notices                                                                          |
 
 ## Setup
 
@@ -230,7 +297,7 @@ Requires Python 3.10+ with:
 pip install -r requirements.txt   # numpy, scikit-learn==1.4.0
 ```
 
-No sibling checkout, no server, no GPU. Everything runs offline from
+No additional checkout, no server, no GPU. Everything runs offline from
 this directory.
 
 ## Reproduce (no private data needed)
@@ -252,7 +319,16 @@ files (sha-verified). Steps needing the private human labels
 (`--check-splits`, threshold calibration inside `train.py`, `--calibrate`,
 `run_eval.py`) fail with a clean pointer to `data/README.md` when the
 labels are absent. With the labels placed, the published 90.0% row
-reproduces from the shipped `synth/artifacts/` model.
+reproduces from the shipped `artifacts/` model.
+
+**What each step writes** (so you can tell a rerun from a rewrite):
+
+| Command                              | Writes                                    |
+| ------------------------------------ | ----------------------------------------- |
+| `generate_synth_meters.py --root synth` | `synth/` (overwrites — byte-identical)  |
+| `features.py --build-synth`          | nothing (prints the matrix shape)         |
+| `train.py --variant synth`           | `artifacts/` (overwrites the frozen model)|
+| `run_eval.py`                        | `outputs/` (appends the scoreboard row)   |
 
 ## License
 

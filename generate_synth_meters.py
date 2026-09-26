@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
-"""Synthetic meter generator for Project 38 (mbitai Meter Classifier Alt).
+"""Synthetic meter generator for the meter-day-classifier repo.
 
 What this is:
-- Mimics the ecoplanet case-study CSV shape ONLY: 15-minute interval rows
+- Mimics the industrial submeter CSV shape ONLY: 15-minute interval rows
   with ``timestamp`` + ``value_kwh`` columns, grouped into meter-days.
-  Structure-only mimicry. No private interview rows, parameters, or plots are
+  Structure-only mimicry. No private customer rows, parameters, or plots are
   reused — every level is drawn from the approved synthetic ranges below with
   pinned seeds, so reruns are byte-identical.
 - Target scale: ~100,000 interval rows (~1,000+ meter-days at 96/day).
-- Output day labels are CALIBRATED WEAK labels: the Eddie-approved amended
-  weak-label rule from Project 37 (unit fix + >=30% running -> active +
-  borderline-floor -> unsure), byte-identical logic, plus a ``--calibrate``
+- Output day labels are CALIBRATED WEAK labels: the approved weak-label rule
+  (unit fix + >=30% running -> active + borderline-floor -> unsure),
+  byte-identical logic, plus a ``--calibrate``
   step that measures the new days against the frozen human gold (train split
   only — eval stays sealed) and against the deterministic rules floor.
 
 Provenance: state machine, value model, spike/missing models, and weak_label()
-were vendored from Project 37's ``generate_meters.py`` (frozen, read-only).
+were vendored from MbitAI's shared meter-day harness (frozen, read-only).
 Only the meter plan, scale, seeds, IDs, and calibration are new. The
 ``--calibrate`` step uses this repo's vendored ``data_io`` / ``rules_floor``
 and reads the private human labels from ``--data-root`` (default: this repo
@@ -309,7 +309,7 @@ def apply_missing(n_rows, rate, rng):
 
 
 def weak_label(states, vals, missing, p):
-    """Amended weak-label rule, byte-identical logic to Project 37 v1."""
+    """Amended weak-label rule, byte-identical logic to the frozen version."""
     active_kw = p["active_kw"]
     total = len(states)
     n_missing = int(missing.sum())

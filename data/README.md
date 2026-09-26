@@ -18,7 +18,7 @@ Everything else works without them:
 - `python3 features.py --build-synth` builds the weak-label matrix
   (the human-label decontamination check is skipped with a warning).
 - `python3 train.py --variant synth` runs the full CV + refit on weak
-  labels only (writes `synth/artifacts/` — keep the shipped files unless
+  labels only (writes `artifacts/` — keep the shipped files unless
   you mean to retrain).
-- The shipped `synth/artifacts/model.joblib` + `operating_point.json`
+- The shipped `artifacts/model.joblib` + `operating_point.json`
   and `outputs/` predictions reproduce the published 90.0% number as-is.

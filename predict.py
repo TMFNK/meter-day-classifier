@@ -2,7 +2,7 @@
 """Frozen-model predictor + template reason (displayed, never scored).
 
 A3 wiring. The model and operating point were frozen in A2
-(`synth/artifacts/model.joblib` + `operating_point.json`); this module loads
+(`artifacts/model.joblib` + `operating_point.json`); this module loads
 them read-only and applies the exact combined decline rule from
 ``train.decline_curve``: predict ``unsure`` when the argmax is ``unsure`` OR
 the top1-top2 probability margin is below the frozen threshold (t=0.0, i.e.
@@ -29,7 +29,7 @@ LABELS = ("active", "standby", "off", "unsure")
 
 SYSTEM_NAME = "classical_logreg_v1"
 
-ARTIFACTS = HERE / "synth" / "artifacts"
+ARTIFACTS = HERE / "artifacts"
 
 
 def _fmt(value: float | None, decimals: int = 4) -> str:

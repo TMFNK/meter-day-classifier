@@ -28,7 +28,9 @@ __pycache__/
 /data/raw/
 outputs/label_pack/selection.json
 
-# NOTE: synth/ (generated training data + frozen artifacts) and outputs/
-# (scoreboard + per-day predictions) ARE committed on purpose. They are the
-# worked example: regenerate with generate_synth_meters.py to verify
-# byte-identical output (see README).
+# NOTE: synth/ (generated training data), artifacts/ (the frozen model),
+# and outputs/ (scoreboard + per-day predictions) ARE committed on purpose.
+# They are the worked example: regenerate the data with
+# generate_synth_meters.py to verify byte-identical output (see README).
+# Regenerating synth/ must never touch artifacts/ — they are separate
+# folders so a data rerun cannot silently overwrite the shipped model.

@@ -5,7 +5,7 @@ This product includes software developed by MbitAI
 (https://www.mbitai.com).
 
 evidence.py, data_io.py, scorer.py, and rules_floor.py are vendored from
-MbitAI's private Project 37 meter-day harness; logic unchanged, provenance
+MbitAI's shared meter-day harness; logic unchanged, provenance
 headers in each file. The synthetic generator, feature contract,
 classifier, and reason templates in this repo are original MbitAI code.
 
