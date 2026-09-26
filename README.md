@@ -13,6 +13,30 @@ hand-labeled days (private; see `data/README.md`).
 Keywords: energy analytics, meter data, classification, offline,
 reproducibility, scikit-learn.
 
+## Results at a glance
+
+Six figures, all generated from the committed numbers by
+`python3 make_figures.py` (see [Reproduce](#reproduce-no-private-data-needed)).
+Nothing here is hand-drawn or re-run — the script reads `outputs/` and
+`synth/` only.
+
+**Accuracy and macro-F1 on the sealed 30-day human eval.** The dashed line
+is the pre-registered deterministic rules floor the model had to beat.
+
+![Sealed-eval scoreboard](docs/figures/scoreboard.png)
+
+**Every error is an abstention, never a confident mistake.** Cells are
+gold × predicted counts; orange rings mark the only off-diagonal entries.
+All three are `unsure` calls, and every gold-`unsure` day is caught (8/8).
+
+![Confusion matrix](docs/figures/confusion.png)
+
+**Abstention quality.** Up and to the left is better: the model declines
+less often _and_ more accurately than the floor, and far more usefully than
+the LLM baselines.
+
+![Abstention trade-off](docs/figures/decline_tradeoff.png)
+
 ## Repo map
 
 ```text
@@ -31,10 +55,13 @@ meter-day-classifier/
 ├── data/                   private gold labels  (NOT committed)
 │   └── README.md             what to place here
 ├── docs/
-│   └── SOLUTION.md         business framing: buyers, ROI, engagement
+│   ├── SOLUTION.md         business framing: buyers, ROI, engagement
+│   └── figures/            the six README figures (.png)
 ├── <pipeline>.py           see "File reference" below
+├── make_figures.py         rebuilds docs/figures/ from the committed numbers
 ├── reproduce.sh            one-command public run
-├── requirements.txt        numpy, scikit-learn==1.4.0
+├── requirements.txt        runtime: numpy, scikit-learn==1.4.0
+├── requirements-figures.txt  extra: matplotlib (for make_figures.py only)
 └── LICENSE / NOTICE        Apache-2.0 + attribution
 ```
 
@@ -63,6 +90,7 @@ generate_synth_meters.py → synth/            weak-labeled meter-days
         train.py         → artifacts/        CV winner, then refit
         predict.py       ← artifacts/        loads frozen model, read-only
         run_eval.py      → outputs/          frozen scorer, sealed split
+        make_figures.py  ← outputs/ + synth/  the README figures
 ```
 
 `rules_floor.py` sits beside this as the deterministic reference the model
@@ -249,6 +277,23 @@ over-abstentions (never a confident wrong label). A rules-first hybrid
 variant was evaluated and removed: it predicted identically to the pure
 classifier on all 30 eval days, so only the simpler model ships.
 
+**Per-class F1.** The model beats the floor on `active` and `unsure` —
+the two classes that matter for triage — and ties it on `standby`/`off`.
+
+![Per-class F1](docs/figures/per_class_f1.png)
+
+**Speed.** Local inference is roughly four orders of magnitude faster per
+meter-day than asking an LLM, with no tokens and no server.
+
+![Latency per meter-day](docs/figures/cost_speed.png)
+
+**Why there is synthetic data at all.** 30 training rows cannot fit 26
+features, so volume comes from rule-generated weak labels over generated
+meters; the 60 human days are kept for fitting the abstention threshold
+and for the one sealed measurement.
+
+![Training data composition](docs/figures/training_mix.png)
+
 **What the numbers do and don't show.** They show a deterministic,
 offline model that beats a hand-written rules floor on a sealed
 human-labeled split while declining less often and more precisely. They
@@ -286,7 +331,10 @@ detail, in the order data flows through the pipeline:
 | **Docs / run / license**   |                                                                                                  |
 | `docs/SOLUTION.md`         | Business framing: buyers, ROI, engagement shapes                                                 |
 | `reproduce.sh`             | One-command public run (no private data needed)                                                  |
-| `requirements.txt`         | `numpy`, `scikit-learn==1.4.0`                                                                   |
+| `make_figures.py`          | Rebuilds `docs/figures/*.png` from the committed numbers (needs `matplotlib`)                    |
+| `docs/figures/`            | The six README figures                                                                           |
+| `requirements.txt`         | Runtime deps: `numpy`, `scikit-learn==1.4.0`                                                     |
+| `requirements-figures.txt` | Figure deps: `matplotlib`, includes the runtime deps                                             |
 | `LICENSE` / `NOTICE`       | Apache-2.0 + attribution notices                                                                 |
 
 ## Setup
@@ -294,11 +342,12 @@ detail, in the order data flows through the pipeline:
 Requires Python 3.10+ with:
 
 ```bash
-pip install -r requirements.txt   # numpy, scikit-learn==1.4.0
+pip install -r requirements.txt           # runtime: numpy, scikit-learn==1.4.0
+pip install -r requirements-figures.txt   # only to rebuild README figures
 ```
 
-No additional checkout, no server, no GPU. Everything runs offline from
-this directory.
+The pipeline itself needs no GPU and no network. `matplotlib` is required
+only by `make_figures.py`; the runtime file stays free of it on purpose.
 
 ## Reproduce (no private data needed)
 
@@ -312,7 +361,19 @@ Or step by step:
 python3 generate_synth_meters.py --root synth --meters 2 --days 5  # tiny regen smoke test
 python3 features.py --build-synth    # 1080-row weak matrix check
 python3 train.py --variant synth     # CV on weak labels (artifacts need private labels)
+python3 make_figures.py              # rebuild docs/figures/ from outputs/ + synth/
 ```
+
+`make_figures.py` needs `matplotlib`, which is **not** a pipeline
+dependency. It ships as a separate, self-contained requirements file:
+
+```bash
+pip install -r requirements-figures.txt   # requirements.txt + matplotlib
+python3 make_figures.py                  # rebuild docs/figures/
+```
+
+It reads only committed files, so it works without the private labels and
+cannot drift from the scoreboard.
 
 Regenerating the full `synth/` (12 × 90) is byte-identical to the shipped
 files (sha-verified). Steps needing the private human labels
@@ -329,6 +390,7 @@ reproduces from the shipped `artifacts/` model.
 | `features.py --build-synth`             | nothing (prints the matrix shape)          |
 | `train.py --variant synth`              | `artifacts/` (overwrites the frozen model) |
 | `run_eval.py`                           | `outputs/` (appends the scoreboard row)    |
+| `make_figures.py`                       | `docs/figures/*.png` (overwrites figures)  |
 
 ## License
 

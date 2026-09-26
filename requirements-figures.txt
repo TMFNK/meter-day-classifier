@@ -1,0 +1,15 @@
+# Extra dependencies for make_figures.py only.
+#
+# The pipeline itself needs nothing beyond requirements.txt (numpy +
+# scikit-learn). matplotlib is used solely to rebuild docs/figures/ from
+# the committed numbers, so it is kept out of the runtime requirements.
+#
+# Install with:
+#   pip install -r requirements-figures.txt
+#
+# This file includes the runtime requirements, so it is a superset and
+# can be installed on a fresh checkout on its own.
+
+-r requirements.txt
+
+matplotlib>=3.7
