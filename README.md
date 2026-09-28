@@ -220,6 +220,51 @@ python3 generate_synth_meters.py --root /tmp/smoke --meters 2 --days 5
 python3 generate_synth_meters.py --root synth --calibrate --data-root .  # needs private labels
 ```
 
+### Labelling choices, and what each one costs
+
+Most of the judgment in this project sits in the label design, not the model. Five decisions did the work, and each one cost something.
+
+| Choice                                                                      | Why it was made                                                                                                           | What it costs                                                                                                                                                       |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Four classes, `unsure` kept as a real answer                                | Genuinely ambiguous days exist in the data, and forcing a call on them invents certainty                                  | Accuracy looks worse than a model that always commits. That is deliberate: a wrong confident label is more expensive than an abstention, because someone acts on it |
+| Weak (rule) labels for volume, human labels for the verdict                 | Hand labels are capped at 60 and expensive; rules are free and unlimited                                                  | The model inherits the rule's blind spots. It can match the floor, not reason past it. Called out here rather than buried                                           |
+| Fit on synthetic, calibrate on human-train-30, evaluate once on a sealed 30 | Keeps human labels as the only honest judge, so the eval number means something                                           | More moving parts and more discipline. One careless look at eval while tuning and the whole measurement is void                                                     |
+| 26 engineered features, no raw floats into a model that reads text          | Arithmetic belongs in features. Thresholds, ratios and run lengths are the actual decision boundaries                     | Any pattern the feature set does not encode is invisible to the model                                                                                               |
+| Reasons from a template, never scored                                       | The reason is a communication artefact, not a prediction. Scoring it would reward fluent phrasing over correct arithmetic | Reason text is formulaic. It cites the numbers and nothing more                                                                                                     |
+
+The `unsure` decision is the one worth defending hardest, because it is the
+least obvious. Two of the four classes are "yes" and "no", one is "nothing
+is happening", and the fourth exists because real meter days regularly fall
+between them: a machine that idles all weekend at a level close to its
+running load is not clearly active and not clearly on standby. A system
+without that escape hatch has to guess, and a guess on a bad day is what
+erodes trust in the whole set of labels.
+
+### What the labelled days are, and what they are not
+
+The 60 hand-labeled days are ground truth about **a human's reading of the
+data**, not about the machine. If two competent engineers disagree on
+whether a 30 kW idle band counts as standby or as reduced production, no
+model can settle it; that is a definition question the site has to answer.
+Labelling surfaces that disagreement early, which is most of its value.
+
+A few habits keep the labels usable:
+
+- **Small and hard beats large and easy.** 60 days chosen for ambiguity
+  taught more than a thousand easy ones would have. Days near the decision
+  boundary carry the information.
+- **Freeze the eval split before fitting anything.** Enforced here rather
+  than promised: `train.py` has no code path that loads the eval file.
+- **Label blind.** A labeller who sees the model's guess anchors on it, and
+  the label stops being independent evidence.
+- **Disagreements first.** Where two rules, or a rule and a person, differ
+  is where labelling time buys the most.
+
+The same weak-label caveat from above applies to any future expansion: more
+rule-generated labels buy a faster model, not a smarter one. If the goal is
+new judgment rather than new speed, the answer is more hand labels at the
+boundary, and there is no way around that.
+
 ## How results are evaluated
 
 Everything below is scored with the frozen `scorer.py` metrics on the
