@@ -34,3 +34,13 @@ outputs/label_pack/selection.json
 # generate_synth_meters.py to verify byte-identical output (see README).
 # Regenerating synth/ must never touch artifacts/ — they are separate
 # folders so a data rerun cannot silently overwrite the shipped model.
+
+# Cline / agent scratch
+.cline/
+.cursor/
+cursorbot
+cline.json
+clinebot/
+.claude/
+.codex/
+.opencode/
